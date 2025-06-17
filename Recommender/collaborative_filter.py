@@ -1,9 +1,6 @@
 from dataframe_setup import get_dataframes
-from sklearn.model_selection import train_test_split
-from scipy.sparse import lil_matrix
 from sklearn.metrics.pairwise import pairwise_distances
 import numpy as np
-from sklearn.preprocessing import LabelEncoder
 
 def predict(ratings, similarity, type):
     if type == 'user':
@@ -19,24 +16,7 @@ def predict(ratings, similarity, type):
         
     return pred
 
-df_books, df_ratings, df_users = get_dataframes()
-
-#Sampling books and users IDs to 5000 for faster computation
-sample_user_ids = np.random.choice(df_ratings['New-User-ID'].unique(), size=5000, replace=False)
-sample_book_ids = np.random.choice(df_ratings['Book-ID'].unique(), size=5000, replace=False)
-
-#Filter ratings to only include the sampled users and books
-df_ratings_sampled = df_ratings[
-    df_ratings['New-User-ID'].isin(sample_user_ids) &
-    df_ratings['Book-ID'].isin(sample_book_ids)
-]
-
-#Encode user and book IDs to avoid sparse matrix explosion
-user_encoder = LabelEncoder()
-book_encoder = LabelEncoder()
-
-df_ratings_sampled['user_idx'] = user_encoder.fit_transform(df_ratings_sampled['New-User-ID'])
-df_ratings_sampled['book_idx'] = book_encoder.fit_transform(df_ratings_sampled['Book-ID'])
+df_books, df_ratings_sampled, df_users = get_dataframes(sample_size = 5000)
 
 n_users = df_ratings_sampled['user_idx'].nunique()
 n_books = df_ratings_sampled['book_idx'].nunique()
@@ -54,5 +34,9 @@ book_similarity = pairwise_distances(data_matrix.T, metric = 'cosine')
 user_prediction = predict(data_matrix, user_similarity, type = 'user')
 book_prediction = predict(data_matrix, book_similarity, type = 'book')
 
+"""
+Each row is a user and each column is a book and the value is the predicted 
+rating that user would give that book (opposite for book prediciton)
+"""
 print(user_prediction)
 print(book_prediction)
