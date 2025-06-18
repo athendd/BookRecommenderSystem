@@ -47,8 +47,6 @@ n_ratings = len(df_ratings)
 n_books = df_ratings['Book-ID'].nunique()
 n_users = df_ratings['New-User-ID'].nunique()
 
-#1149780 for ratings, 340556 for books, 105283 for users
-
 data_matrix = np.zeros((n_users, n_books))
 
 for row in df_ratings.itertuples():
