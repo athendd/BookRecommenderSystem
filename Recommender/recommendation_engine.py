@@ -9,7 +9,7 @@ from dataframe_setup import get_dataframes
 
 df_books, df_ratings, df_users = get_dataframes(sample_size = 10000)
 
-original_matrix = np.array(df_ratings.pivot(index = 'New-User-ID', columns ='Book-ID', values = 'Book-Rating').fillna(0))
+original_matrix = np.array(df_ratings.pivot(index = 'User-ID', columns ='Book-ID', values = 'Book-Rating').fillna(0))
 
 matrix_factorization = Matrix_Factorization(original_matrix, 40, 0.001, 0.01, iterations = 100)
 
