@@ -33,6 +33,7 @@ def get_dataframes(sample_size = 0):
     
     if sample_size > 0:
         df_ratings = resample_dataframe(sample_size, df_ratings)
+        df_ratings = df_ratings.reset_index()
         
         
     return df_books, df_ratings, df_users

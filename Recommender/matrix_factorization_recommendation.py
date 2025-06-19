@@ -56,8 +56,94 @@ class Matrix_Factorization():
             error += pow(self.original_matrix[x, y] - predicted[x, y], 2)
         
         #Calculate the rmse
-        return np.sqrt(error)
+        return np.sqrt(error)    
     
+    def compute_precision_recall_at_k(self, k, rating_threshold):
+        total_precision = 0
+        total_recall = 0
+        num_users_with_preds = 0
+        
+        pred_matrix = self.full_matrix()
+                
+        for user in range(self.num_users):
+            rated_items = self.original_matrix[user] > 0
+            unrated_items = ~rated_items
+            
+            if np.sum(unrated_items) < k:
+                continue
+
+            relevant_unrated_items = np.where((self.original_matrix[user] >= rating_threshold) & unrated_items)[0]
+            num_relevant_items = len(relevant_unrated_items)
+            
+            if num_relevant_items == 0:
+                continue
+                
+            user_preds = pred_matrix[user].copy()
+            
+            #Remove all rated items from prediction matrix
+            user_preds[rated_items] = -np.diff
+            
+            top_k_items = np.argsort(user_preds)[-k:][::-1]
+            
+            num_relevant_recommended = np.sum(self.original_matrix[user, top_k_items] >= rating_threshold)
+            
+            precision_at_k = num_relevant_recommended / k
+            recall_at_k = num_relevant_recommended / num_relevant_items
+
+            total_precision += precision_at_k
+            total_recall += recall_at_k
+            num_users_with_preds += 1
+        
+        if num_users_with_preds == 0:
+            return 0, 0
+
+        avg_precision = total_precision / num_users_with_preds
+        avg_recall = total_recall / num_users_with_preds
+
+        return avg_precision, avg_recall
+    
+    def compute_recall_at_k(self, k, rating_threshold):
+        total_recall = 0
+        num_users_with_preds = 0
+        
+        predicted_matrix = self.full_matrix()
+        
+        for user in range(self.num_users):
+            relevant_items_idxs = np.where(self.original_matrix[user, :] >= rating_threshold)[0]
+            total_relevant_items = len(relevant_items_idxs)
+            
+            if total_relevant_items == 0:
+                continue
+            
+            unrated_items_idxs = np.where(self.original_matrix[user, :] == 0)[0]
+            
+            if len(unrated_items_idxs) == 0:
+                continue
+            
+            predicted_ratings = predicted_matrix[user, unrated_items_idxs]
+            
+            if k > len(unrated_items_idxs):
+                continue
+            
+            top_k_idxs = predicted_ratings.argsort()[-k:][::-1]
+            top_k_items = unrated_items_idxs[top_k_idxs]
+            
+            true_positives = 0
+            
+            for item in top_k_items:
+                if item in relevant_items_idxs:
+                    true_positives += 1
+            
+            if total_relevant_items > 0:
+                recall = true_positives / total_relevant_items
+                total_recall += recall
+                num_users_with_preds += 1
+            
+        if num_users_with_preds > 0:
+            return total_recall / num_users_with_preds
+        else:
+            return 0
+            
     #Gradient descent
     def sgd(self):
         for i, j, r in self.samples:
