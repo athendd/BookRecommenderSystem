@@ -1,4 +1,4 @@
-#Consider making it  ahybrid model that uses user's features to help predict'
+#Consider making it a hybrid model that uses user's features to help predict'
 #Could remove books with very few ratings or users that have rated very few books
 #Pure collaborative filtering model that only uses user item interactions aka ratings
 from dataframe_setup import get_dataframes
