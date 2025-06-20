@@ -1,14 +1,17 @@
 import numpy as np
+from collections import defaultdict
 
 class Matrix_Factorization():
     
-    def __init__(self, original_matrix, num_features, alpha, beta, iterations):
+    def __init__(self, original_matrix, num_features, alpha, beta, iterations, train_data, test_data):
         self.original_matrix = original_matrix
         self.num_users, self.num_items = original_matrix.shape
         self.num_features = num_features
         self.alpha = alpha
         self.beta = beta
         self.iterations = iterations
+        self.train_data = train_data
+        self.test_data = test_data
         
     def train(self):
         self.user_matrix = np.random.normal(scale = 1./self.num_features, size = (self.num_users, self.num_features))
@@ -19,9 +22,14 @@ class Matrix_Factorization():
         self.b_i = np.zeros(self.num_items)
         
         #Find all unrated items in the original matrix
-        self.b = np.mean(self.original_matrix[np.where(self.original_matrix != 0)])
+        self.b = np.mean([r for (_, _, r) in self.train_data]) if self.train_data else np.mean(self.original_matrix[self.original_matrix > 0])
         
-        self.samples = [(i, j, self.original_matrix[i, j]) for i in range(self.num_users) for j in range(self.num_items) if self.original_matrix[i, j] > 0]
+        self.samples = self.train_data if self.train_data else [
+            (i, j, self.original_matrix[i, j])
+            for i in range(self.num_users)
+            for j in range(self.num_items)
+            if self.original_matrix[i, j] > 0
+        ]        
         
         training_process = []
         
@@ -42,103 +50,58 @@ class Matrix_Factorization():
         return training_process
     
     def compute_mse(self):
-        
-        #Get all non-zero elements from the original matrix
-        xs, ys = self.original_matrix.nonzero()
-        
-        predicted = self.full_matrix()
         error = 0
+        for i, j, r in self.samples:
+            error += (r - self.get_rating(i, j)) ** 2
         
-        #Iterate over ratings and compute the mse
-        for x, y in zip(xs, ys):
-            
-            #Get the difference between the predicted and actual value
-            error += pow(self.original_matrix[x, y] - predicted[x, y], 2)
-        
-        #Calculate the rmse
-        return np.sqrt(error)    
+        return np.sqrt(error / len(self.samples))
     
-    def compute_precision_recall_at_k(self, k, rating_threshold):
-        total_precision = 0
-        total_recall = 0
-        num_users_with_preds = 0
+    def compute_rmse(self):
+        error = 0
+        for i, j, r in self.test_data:
+            pred = self.get_rating(i, j)
+            error += (r - pred)**2
         
-        pred_matrix = self.full_matrix()
-                
-        for user in range(self.num_users):
-            rated_items = self.original_matrix[user] > 0
-            unrated_items = ~rated_items
-            
-            if np.sum(unrated_items) < k:
-                continue
-
-            relevant_unrated_items = np.where((self.original_matrix[user] >= rating_threshold) & unrated_items)[0]
-            num_relevant_items = len(relevant_unrated_items)
-            
-            if num_relevant_items == 0:
-                continue
-                
-            user_preds = pred_matrix[user].copy()
-            
-            #Remove all rated items from prediction matrix
-            user_preds[rated_items] = -np.diff
-            
-            top_k_items = np.argsort(user_preds)[-k:][::-1]
-            
-            num_relevant_recommended = np.sum(self.original_matrix[user, top_k_items] >= rating_threshold)
-            
-            precision_at_k = num_relevant_recommended / k
-            recall_at_k = num_relevant_recommended / num_relevant_items
-
-            total_precision += precision_at_k
-            total_recall += recall_at_k
-            num_users_with_preds += 1
-        
-        if num_users_with_preds == 0:
-            return 0, 0
-
-        avg_precision = total_precision / num_users_with_preds
-        avg_recall = total_recall / num_users_with_preds
-
-        return avg_precision, avg_recall
+        return np.sqrt(error / len(self.test_data))
     
     def compute_recall_at_k(self, k, rating_threshold):
+        #All user items that are equal to or greater than the rating threshold
+        user_relevant_items = defaultdict(set)
+        
+        for user, item, rating in self.test_data:
+            if rating >= rating_threshold:
+                user_relevant_items[user].add(item)
+
+        pred_matrix = self.full_matrix()
         total_recall = 0
         num_users_with_preds = 0
-        
-        predicted_matrix = self.full_matrix()
-        
-        for user in range(self.num_users):
-            relevant_items_idxs = np.where(self.original_matrix[user, :] >= rating_threshold)[0]
-            total_relevant_items = len(relevant_items_idxs)
-            
-            if total_relevant_items == 0:
+
+        for user, relevant_items in user_relevant_items.items():
+            if len(relevant_items) == 0:
                 continue
-            
-            unrated_items_idxs = np.where(self.original_matrix[user, :] == 0)[0]
-            
-            if len(unrated_items_idxs) == 0:
+
+            #Identify unrated items by the user in the training dataset
+            rated_items = set(np.where(self.original_matrix[user] > 0)[0])
+            unrated_items = list(set(range(self.num_items)) - rated_items)
+
+            if len(unrated_items) == 0:
                 continue
-            
-            predicted_ratings = predicted_matrix[user, unrated_items_idxs]
-            
-            if k > len(unrated_items_idxs):
+
+            #Predict scores for unrated items
+            user_predictions = pred_matrix[user, unrated_items]
+            if k > len(unrated_items):
                 continue
-            
-            top_k_idxs = predicted_ratings.argsort()[-k:][::-1]
-            top_k_items = unrated_items_idxs[top_k_idxs]
-            
-            true_positives = 0
-            
-            for item in top_k_items:
-                if item in relevant_items_idxs:
-                    true_positives += 1
-            
-            if total_relevant_items > 0:
-                recall = true_positives / total_relevant_items
-                total_recall += recall
-                num_users_with_preds += 1
-            
+
+            #Get top-k recommended items
+            top_k_idxs = np.argsort(user_predictions)[-k:][::-1]
+            top_k_items = [unrated_items[idx] for idx in top_k_idxs]
+
+            true_positives = len(set(top_k_items) & relevant_items)
+            recall = true_positives / len(relevant_items)
+
+            total_recall += recall
+            num_users_with_preds += 1
+
         if num_users_with_preds > 0:
             return total_recall / num_users_with_preds
         else:
@@ -162,10 +125,8 @@ class Matrix_Factorization():
     
     #Get user i's rating for the jth item
     def get_rating(self, i, j):
-        pred = self.b + self.b_u[i] + self.b_i[j] + self.user_matrix[i, :].dot(self.item_matrix[j, :].T)
-        
-        return pred
-    
+        return self.b + self.b_u[i] + self.b_i[j] + self.user_matrix[i, :].dot(self.item_matrix[j, :].T)
+            
     def full_matrix(self):
         return self.b + self.b_u[:, np.newaxis] + self.b_i[np.newaxis, :] + self.user_matrix.dot(self.item_matrix.T)
     

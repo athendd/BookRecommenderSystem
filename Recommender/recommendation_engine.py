@@ -19,11 +19,8 @@ train_matrix = np.zeros_like(original_matrix)
 for i, j, r in train_data:
     train_matrix[i, j] = r
     
-matrix_factorization = Matrix_Factorization(original_matrix, 40, 0.001, 0.01, iterations = 100)
+matrix_factorization = Matrix_Factorization(train_matrix, 40, 0.001, 0.01, iterations = 100, train_data = train_data, test_data = test_data)
 matrix_factorization.train()
 
-squared_errors = []
-for i, j, true_rating in test_data:
-    pred_rating = matrix_factorization.get_rating(i, j)
-    squared_errors.append((true_rating - pred_rating) ** 2)
-print(np.sqrt(np.mean(squared_errors)))
+recall = matrix_factorization.compute_recall_at_k(5, 6)
+print(recall)
