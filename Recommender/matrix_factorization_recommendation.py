@@ -64,7 +64,7 @@ class Matrix_Factorization():
         
         return np.sqrt(error / len(self.test_data))
     
-    def compute_recall_at_k(self, k, rating_threshold):
+    def compute_recall_precision_at_k(self, k, rating_threshold):
         #All user items that are equal to or greater than the rating threshold
         user_relevant_items = defaultdict(set)
         
@@ -74,6 +74,7 @@ class Matrix_Factorization():
 
         pred_matrix = self.full_matrix()
         total_recall = 0
+        total_precision = 0
         num_users_with_preds = 0
 
         for user, relevant_items in user_relevant_items.items():
@@ -98,14 +99,16 @@ class Matrix_Factorization():
 
             true_positives = len(set(top_k_items) & relevant_items)
             recall = true_positives / len(relevant_items)
+            precision = true_positives / k
 
             total_recall += recall
+            total_precision += precision
             num_users_with_preds += 1
 
         if num_users_with_preds > 0:
-            return total_recall / num_users_with_preds
+            return total_recall / num_users_with_preds, total_precision/ num_users_with_preds
         else:
-            return 0
+            return 0, 0
                     
     #Gradient descent
     def sgd(self):

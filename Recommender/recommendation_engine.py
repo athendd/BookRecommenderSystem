@@ -22,5 +22,6 @@ for i, j, r in train_data:
 matrix_factorization = Matrix_Factorization(train_matrix, 40, 0.001, 0.01, iterations = 100, train_data = train_data, test_data = test_data)
 matrix_factorization.train()
 
-recall = matrix_factorization.compute_recall_at_k(5, 6)
+recall, precision = matrix_factorization.compute_recall_precision_at_k(5, 6)
 print(recall)
+print(precision)
