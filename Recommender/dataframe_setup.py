@@ -8,7 +8,7 @@ from the dataframes along with other data preprocessing
 Returns: books, ratings, and users dataframes
 """
 def get_dataframes(sample_size = 0):
-    df_books = pd.read_csv('bookdataset/Books.csv')
+    df_books = pd.read_csv('bookdataset/Books.csv', low_memory = False)
     
     #Drop unnecessary columns from books dataframe
     df_books = df_books.drop(columns = ['Image-URL-S', 'Image-URL-M', 'Image-URL-L'])
@@ -44,7 +44,7 @@ def get_dataframes(sample_size = 0):
     #Update User-ID column in ratings dataframe to start at 0
     # df_ratings['New-User-ID'] = pd.factorize(df_ratings['User-ID'])[0] + 1 
     
-    if sample_size > 0:
+    if sample_size > 0 and sample_size < len(df_ratings):
         df_ratings = resample_dataframe(sample_size, df_ratings)
         df_ratings = df_ratings.reset_index()
         
@@ -62,16 +62,15 @@ def check_for_column_duplicates(df, col):
 """
 Resamples ratings dataframe to a given sample size that makes it easier to compute
 """
-def resample_dataframe(sample_size, df_ratings):
-    #Sampling books and users IDs for faster computation
-    sample_user_ids = np.random.choice(df_ratings['User-ID'].unique(), size=sample_size, replace=False)
-    sample_book_ids = np.random.choice(df_ratings['Book-ID'].unique(), size=sample_size, replace=False)
+def resample_dataframe(sample_size, df_ratings, min_user_ratings = 10):
+    user_counts = df_ratings['User-ID'].value_counts()
+    active_users = user_counts[user_counts >= min_user_ratings].index
+    sampled_users = np.random.choice(active_users, size=min(sample_size, len(active_users)), replace=False)
 
-    #Filter ratings to only include the sampled users and books
-    df_ratings_sampled = df_ratings[
-        df_ratings['User-ID'].isin(sample_user_ids) &
-        df_ratings['Book-ID'].isin(sample_book_ids)
-    ]
-    
-    return df_ratings_sampled
-    
+    df_filtered = df_ratings[df_ratings['User-ID'].isin(sampled_users)]
+
+    book_counts = df_filtered['Book-ID'].value_counts()
+    top_books = book_counts.nlargest(sample_size).index
+    df_final = df_filtered[df_filtered['Book-ID'].isin(top_books)]
+
+    return df_final

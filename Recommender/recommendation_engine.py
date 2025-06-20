@@ -1,6 +1,7 @@
-#Try using a system with both cotent and collaborative filtering
 #Hybrid model could averag eout both models' ratings or combine the scores together
-#Edit this to handle test data
+#Switch to ALS
+#Normalize ratings toa range between 0 and 1
+#Hyperparameter tuning
 from matrix_factorization_recommendation import Matrix_Factorization
 import numpy as np
 from dataframe_setup import get_dataframes
@@ -19,7 +20,7 @@ train_matrix = np.zeros_like(original_matrix)
 for i, j, r in train_data:
     train_matrix[i, j] = r
     
-matrix_factorization = Matrix_Factorization(train_matrix, 40, 0.001, 0.01, iterations = 100, train_data = train_data, test_data = test_data)
+matrix_factorization = Matrix_Factorization(train_matrix, 60, 0.001, 0.01, iterations = 100, train_data = train_data, test_data = test_data)
 matrix_factorization.train()
 
 recall, precision = matrix_factorization.compute_recall_precision_at_k(5, 6)
