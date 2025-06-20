@@ -143,7 +143,7 @@ class Matrix_Factorization():
             return total_recall / num_users_with_preds
         else:
             return 0
-            
+                    
     #Gradient descent
     def sgd(self):
         for i, j, r in self.samples:

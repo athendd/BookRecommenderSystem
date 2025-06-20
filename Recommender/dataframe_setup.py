@@ -9,7 +9,7 @@ Returns: books, ratings, and users dataframes
 """
 def get_dataframes(sample_size = 0):
     df_books = pd.read_csv('bookdataset/Books.csv')
-
+    
     #Drop unnecessary columns from books dataframe
     df_books = df_books.drop(columns = ['Image-URL-S', 'Image-URL-M', 'Image-URL-L'])
 
@@ -33,7 +33,7 @@ def get_dataframes(sample_size = 0):
     
     #Remove all duplicate ISBN from books dataframe
     df_books = check_for_column_duplicates(df_books, 'ISBN')
-    
+        
     #Remove all duplicate User IDs from the users dataframe
     df_users = check_for_column_duplicates(df_users, 'User-ID')
     
@@ -56,6 +56,8 @@ Removes all duplicate values from a given column in a dataframe
 """
 def check_for_column_duplicates(df, col):
     df = df.drop_duplicates(subset = [col], keep = False)
+    
+    return df
     
 """
 Resamples ratings dataframe to a given sample size that makes it easier to compute
