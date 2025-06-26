@@ -4,6 +4,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 """
 535 different genres
@@ -29,8 +31,8 @@ def clean_text(text):
     #Remove html from the text
     text = re.sub(html_pattern, '', text)
     
-    #Removes all characters that are not letters or numbers
-    text = re.sub("[^a-zA-Z0-9]", " ", text)
+    #Removes all characters that are not letters, numbers, apostropheres and hyphens
+    text = re.sub("[^a-zA-Z0-9'-]", " ", text)
     
     doc = nlp(text)
     filtered_and_lemmatized_words = []
@@ -45,22 +47,25 @@ def clean_text(text):
     
     return text
 
-df = pd.read_csv(r'Movie Dataset\movie_dataset.csv')
+def clean_dataset():
+    df = pd.read_csv(r'Movie Dataset\movie_dataset.csv')
 
-#Remove uncessary columns 
-df = df.drop(columns = ['homepage'])
+    #Remove uncessary columns 
+    df = df.drop(columns = ['homepage'])
 
-#Remove all rows with N/A values
-df = df.dropna()
+    #Remove all rows with N/A values
+    df = df.dropna()
 
-#Lower every word in genre column
-df['genres'] = df['genres'].str.lower()
+    #Lower every word in genre column
+    df['genres'] = df['genres'].str.lower()
 
-#Add a total earnings column
-df['total_profit'] = df['revenue'] - df['budget']
+    #Add a total earnings column
+    df['total_profit'] = df['revenue'] - df['budget']
 
-#Clean text for overview
-df['overview'] = df['overview'].apply(clean_text)
+    #Clean text for overview
+    df['overview'] = df['overview'].apply(clean_text)
 
-print(df['overview'].head())
+    #Create a column made up of keywords, genre, and overview
+    df['combined_text'] = df['overview'] + ' ' + df['genres'] + ' ' + df['keywords']
 
+    return df
