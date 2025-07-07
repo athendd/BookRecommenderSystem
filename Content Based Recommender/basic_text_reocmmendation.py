@@ -2,6 +2,8 @@ from data_preparation import clean_dataset
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import pandas as pd
+from transformers import BertTokenizer, BertModel
+import torch
 
 #Use BERT instead of TfidfVectorizer
 
@@ -15,8 +17,7 @@ Args:
     similarity_matrix (np.array): The cosine similarity matrix.
     num_recommendations (int): The number of top recommendations to return.
 
-Returns:
-    A Series of recommended movie titles.
+Returns: A Series of recommended movie titles
 """
 def get_movie_recommendations(movie, df, similarity_matrix, num_recommendations=10):
 
@@ -47,14 +48,29 @@ df = clean_dataset()
 
 documents = df['combined_text'].tolist()
 
-vectorizer = TfidfVectorizer(stop_words = 'english', max_features = 5000)
+#vectorizer = TfidfVectorizer(stop_words = 'english', max_features = 5000)
 
-tfidf_matrix = vectorizer.fit_transform(documents)
+tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+model = BertModel.from_pretrained('bert-base-uncased')
 
-similarity_matrix = cosine_similarity(tfidf_matrix)
+document_embeddings = []
+
+for document in documents:
+    inputs = tokenizer(document, return_tensors = 'pt', padding = True, truncation = True)
+    with torch.no_grad():
+        outputs = model(**inputs)
+    
+    cls_embedding = outputs.last_hidden_state[:, 0, :].squeeze().numpy()
+    document_embeddings.append(cls_embedding)
+#tfidf_matrix = vectorizer.fit_transform(documents)
+
+#similarity_matrix = cosine_similarity(tfidf_matrix)
+similarity_matrix = cosine_similarity(document_embeddings)
+
 
 #Title of chosen movie
 movie_to_recommend_for = "Avatar" 
+
 top_10_recommendations = get_movie_recommendations(movie_to_recommend_for, df, similarity_matrix, num_recommendations=10)
 
 if not top_10_recommendations.empty:
