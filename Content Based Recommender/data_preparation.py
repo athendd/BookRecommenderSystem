@@ -6,6 +6,7 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.preprocessing import MinMaxScaler
 
 """
 535 different genres
@@ -34,16 +35,16 @@ def clean_text(text):
     #Removes all characters that are not letters, numbers, apostropheres and hyphens
     text = re.sub("[^a-zA-Z0-9'-]", " ", text)
     
-    doc = nlp(text)
-    filtered_and_lemmatized_words = []
+    #doc = nlp(text)
+    #filtered_and_lemmatized_words = []
 
     #Iterate through the tokens 
-    for token in doc:
-        #Check if the token is not a stop word and is not punctuation/whitespace
-        if not token.is_stop and not token.is_punct and not token.is_space:
-            filtered_and_lemmatized_words.append(token.lemma_)
+    #for token in doc:
+    #    #Check if the token is not a stop word and is not punctuation/whitespace
+    #    if not token.is_stop and not token.is_punct and not token.is_space:
+    #        filtered_and_lemmatized_words.append(token.lemma_)
 
-    text = " ".join(filtered_and_lemmatized_words)
+    #text = " ".join(filtered_and_lemmatized_words)
     
     return text
 
@@ -58,14 +59,17 @@ def clean_dataset():
 
     #Lower every word in genre column
     df['genres'] = df['genres'].str.lower()
-
-    #Add a total earnings column
-    df['total_profit'] = df['revenue'] - df['budget']
+    
+    df['director'] = df['director'].str.lower()
 
     #Clean text for overview
     df['overview'] = df['overview'].apply(clean_text)
+    
+    #Adding weights to recommendations
+    #df['combined_text'] = df['overview'] * 2 + ' ' + df['genres'] + ' ' + df['keywords']
+
 
     #Create a column made up of keywords, genre, and overview
-    df['combined_text'] = df['overview'] + ' ' + df['genres'] + ' ' + df['keywords']
+    df['combined_text'] = df['overview'] + ' ' + df['genres'] + ' ' + df['keywords'] + ' ' + df['director']
 
     return df
