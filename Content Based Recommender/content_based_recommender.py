@@ -52,7 +52,6 @@ documents = df['combined_text'].tolist()
 
 model = SentenceTransformer('all-MiniLM-L6-v2')  
 document_embeddings = model.encode(documents, show_progress_bar=True)
-document_embeddings = []
 
 #tfidf_matrix = vectorizer.fit_transform(documents)
 
