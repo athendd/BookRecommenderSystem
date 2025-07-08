@@ -1,6 +1,3 @@
-#Consider making it a hybrid model that uses user's features to help predict'
-#Could remove books with very few ratings or users that have rated very few books
-#Pure collaborative filtering model that only uses user item interactions aka ratings
 from dataframe_setup import get_dataframes
 from scipy.sparse import lil_matrix
 from sklearn.neighbors import NearestNeighbors
