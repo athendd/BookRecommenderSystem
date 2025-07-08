@@ -13,38 +13,29 @@ from sklearn.preprocessing import MinMaxScaler
 Create a new column that is a combination of budget and revenue
 """
 
-nlp = spacy.load("en_core_web_sm")    
+nlp = spacy.load("en_core_web_sm", disable=["ner", "parser"])  
 stop_words = set(stopwords.words('english'))
 
+def lemmatize(text):
+    doc = nlp(text)
+    
+    return " ".join(
+        [token.lemma_ for token in doc if token.is_alpha and not token.is_stop]
+    )
+
 def clean_text(text):
-    url_pattern = re.compile(r'https?://\S+|www\.\S+')
-    html_pattern = r'<.*?>'
-
-    #Lowercase the text
     text = text.lower()
+    #Remove urls from the text
+    text = re.sub(r'https?://\S+|www\.\S+', '', text)  # Remove URLs
     
-    #Remove unncessary spaces
-    text = re.sub(" +", ' ', text)
+    #Remove HTML from the text
+    text = re.sub(r'<.*?>', '', text)  
     
-    #Remove urls from the text 
-    text = url_pattern.sub(r'', text)
+    #Removes all characters that are not letters, numbers, hyphens, or apostrophes
+    text = re.sub(r"[^a-zA-Z0-9\s'-]", ' ', text)  
+    text = re.sub(r"\s+", ' ', text).strip()
     
-    #Remove html from the text
-    text = re.sub(html_pattern, '', text)
-    
-    #Removes all characters that are not letters, numbers, apostropheres and hyphens
-    text = re.sub("[^a-zA-Z0-9'-]", " ", text)
-    
-    #doc = nlp(text)
-    #filtered_and_lemmatized_words = []
-
-    #Iterate through the tokens 
-    #for token in doc:
-    #    #Check if the token is not a stop word and is not punctuation/whitespace
-    #    if not token.is_stop and not token.is_punct and not token.is_space:
-    #        filtered_and_lemmatized_words.append(token.lemma_)
-
-    #text = " ".join(filtered_and_lemmatized_words)
+    text = lemmatize(text)
     
     return text
 
@@ -67,7 +58,6 @@ def clean_dataset():
     
     #Adding weights to recommendations
     #df['combined_text'] = df['overview'] * 2 + ' ' + df['genres'] + ' ' + df['keywords']
-
 
     #Create a column made up of keywords, genre, and overview
     df['combined_text'] = df['overview'] + ' ' + df['genres'] + ' ' + df['keywords'] + ' ' + df['director']
