@@ -1,12 +1,46 @@
 from data_preparation import clean_dataset
-from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import pandas as pd
-from transformers import BertTokenizer, BertModel
-import torch
-from tqdm import tqdm
 from sentence_transformers import SentenceTransformer
+import numpy as np
+from tqdm import tqdm
 
+model = SentenceTransformer('all-MiniLM-L6-v2')  
+
+def weighted_embedding(row):
+    embeddings = []
+    weights = []
+    
+    features = {
+        "overview": row['overview'],
+        "genres": row['genres'],
+        "keywords": row['keywords'],
+        "director": row['director'],
+        "tagline": row['tagline'],
+        "year": row['year'],
+        "language": row['original_language']
+    }
+    
+    feature_weights = {
+        "overview": 2.0,
+        "genres": 1.75,
+        "keywords": 1.2,
+        "director": 1.5,
+        "tagline": 1.0,
+        "year": 0.75,
+        "language": 0.5
+    }
+
+    for feature, text in features.items():
+        if pd.notnull(text):
+            emb = model.encode(text, normalize_embeddings=True)
+            embeddings.append(emb * feature_weights[feature])
+            weights.append(feature_weights[feature])
+
+    combined = np.sum(embeddings, axis=0) / np.sum(weights)
+    
+    return combined
+    
 """
 Recommends top N movies based on cosine similarity.
 
@@ -45,30 +79,17 @@ def get_movie_recommendations(movie, df, similarity_matrix, num_recommendations=
 
 df = clean_dataset()
 
+embeddings = []
+for _, row in tqdm(df.iterrows(), total=len(df)):
+    embeddings.append(weighted_embedding(row))
+
+df['combined_text'] = embeddings
+
 documents = df['combined_text'].tolist()
 
-#vectorizer = TfidfVectorizer(stop_words = 'english', max_features = 5000)
+print('yes')
 
-
-model = SentenceTransformer('all-MiniLM-L6-v2')  
-document_embeddings = model.encode(documents, show_progress_bar=True)
-
-#tfidf_matrix = vectorizer.fit_transform(documents)
-
-#similarity_matrix = cosine_similarity(tfidf_matrix)
-
-"""
-Way to incorporate numerical data
-
-scaler = MinMaxScaler()
-numeric_features = scaler.fit_transform(df[['total_profit', 'popularity']])
-final_embeddings = [np.concatenate((bert_emb, numeric_features[i])) for i, bert_emb in enumerate(document_embeddings)]
-
-Use final embeddings instead of document embeddings
-"""
-
-similarity_matrix = cosine_similarity(document_embeddings)
-
+similarity_matrix = cosine_similarity(documents)
 
 #Title of chosen movie
 movie_to_recommend_for = "Avatar" 
