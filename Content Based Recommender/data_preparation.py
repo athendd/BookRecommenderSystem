@@ -1,17 +1,7 @@
 import re
 import spacy
 import pandas as pd
-import matplotlib.pyplot as plt
 from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.preprocessing import MinMaxScaler
-
-"""
-535 different genres
-Create a new column that is a combination of budget and revenue
-"""
 
 nlp = spacy.load("en_core_web_sm", disable=["ner", "parser"])  
 stop_words = set(stopwords.words('english'))
@@ -26,7 +16,7 @@ def lemmatize(text):
 def clean_text(text):
     text = text.lower()
     #Remove urls from the text
-    text = re.sub(r'https?://\S+|www\.\S+', '', text)  # Remove URLs
+    text = re.sub(r'https?://\S+|www\.\S+', '', text) 
     
     #Remove HTML from the text
     text = re.sub(r'<.*?>', '', text)  
@@ -52,14 +42,14 @@ def clean_dataset():
     df['genres'] = df['genres'].str.lower()
     
     df['director'] = df['director'].str.lower()
+    
+    df['tagline'] = df['tagline'].str.lower()
+    
+    df['year'] = pd.to_datetime(df['release_date']).dt.year.astype(str)
+            
+    df['original_language'] = df['original_language'].str.lower()
 
     #Clean text for overview
     df['overview'] = df['overview'].apply(clean_text)
-    
-    #Adding weights to recommendations
-    #df['combined_text'] = df['overview'] * 2 + ' ' + df['genres'] + ' ' + df['keywords']
-
-    #Create a column made up of keywords, genre, and overview
-    df['combined_text'] = df['overview'] + ' ' + df['genres'] + ' ' + df['keywords'] + ' ' + df['director']
 
     return df
