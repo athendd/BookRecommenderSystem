@@ -1,7 +1,7 @@
-📚 Hybrid Recommender Systems – Books & Movies
+## Hybrid Recommender Systems – Books & Movies
 Built both collaborative and content-based recommender systems using Python 3.11 to explore and compare different recommendation techniques on large-scale datasets.
 
-📘 Collaborative Filtering (Books)
+## Collaborative Filtering (Books)
 Utilized a massive book rating dataset; applied custom resampling strategies to filter for active users and frequently reviewed books due to hardware constraints.
 
 Developed multiple models:
@@ -14,7 +14,7 @@ Matrix Factorization with SGD: Tuned hyperparameters to optimize Recall@K, Preci
 
 Techniques: Matrix factorization, cosine similarity, KNN, SVD, SGD, normalization, resampling, evaluation metrics (Recall@K, Precision@K, RMSE), hyperparameter tuning.
 
-🎬 Content-Based Filtering (Movies)
+## Content-Based Filtering (Movies)
 Built a lightweight movie recommender for concept exploration.
 
 Used textual metadata (overview, genre, director, etc.) to compute similarity.
@@ -24,3 +24,6 @@ Preprocessing: Text cleaning, lemmatization, min-max normalization.
 Used SentenceTransformers (all-MiniLM-L6-v2) for semantic embeddings; computed cosine similarity to return top 10 similar movies.
 
 This project served as both a learning platform and a technical showcase, balancing practical system limitations with theoretical application.
+
+# Results from Content-Based Filtering
+<img width="845" height="302" alt="image" src="https://github.com/user-attachments/assets/ffe04aab-0953-4b67-834e-2d5d2af186f1" />
